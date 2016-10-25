@@ -15,24 +15,37 @@ def get_all_leaves(bst):
     dmp = bst.get_dump()
     return [get_leaf_values(tree) for tree in dmp]
 
+# init begin
+data_train = pd.read_csv('/home/tks/download/higgs/binary.train750', header=None)
+data_valid = pd.read_csv('/home/tks/download/higgs/binary.valid250', header=None)
+
+
+y_train = data_train[0].values
+data_train.drop(0, axis=1, inplace=True)
+y_valid = data_valid[0].values
+data_valid.drop(0, axis=1, inplace=True)
+
+dtrain = xgb.DMatrix(data_train.values, label = y_train)
+dvalid = xgb.DMatrix(data_valid.values, label = y_valid)
+
+# data = pd.read_csv('/home/tks/download/higgs/binary.train', header=None)
+# data_test = pd.read_csv('/home/tks/download/higgs/binary.test', header=None)
+# y = data[0].values
+# data.drop(0, axis=1, inplace=True)
+# y_test = data_test[0].values
+# data_test.drop(0, axis=1, inplace=True)
+# dtrain = xgb.DMatrix(data.values, label = y)
+# dtest = xgb.DMatrix(data_test.values, label = y_test)
+
+# init end
+
+
 # split -l 10000000 HIGGS.csv out
 # mv outaa binary.train
 # mv outab binary.test
 # split -l 7500000 binary.train out
 # mv outaa binary.train750
 # mv outab binary.valid250
-
-data = pd.read_csv('/home/tks/download/higgs/binary.train', header=None)
-data_test = pd.read_csv('/home/tks/download/higgs/binary.test', header=None)
-
-y = data[0].values
-data.drop(0, axis=1, inplace=True)
-y_test = data_test[0].values
-data_test.drop(0, axis=1, inplace=True)
-
-dtrain = xgb.DMatrix(data.values, label = y)
-dtest = xgb.DMatrix(data_test.values, label = y_test)
-
 
 param = {'objective':'binary:logistic', 'tree_method':'exact',
          'eta':.1, 'max_depth':8, 'min_child_weight':100,
@@ -69,17 +82,6 @@ pd.DataFrame(scores)
 
 # r004
 # 2016/10/19 5.2h
-data_train = pd.read_csv('/home/tks/download/higgs/binary.train750', header=None)
-data_valid = pd.read_csv('/home/tks/download/higgs/binary.valid250', header=None)
-
-y_train = data_train[0].values
-data_train.drop(0, axis=1, inplace=True)
-y_valid = data_valid[0].values
-data_valid.drop(0, axis=1, inplace=True)
-
-dtrain = xgb.DMatrix(data_train.values, label = y_train)
-dvalid = xgb.DMatrix(data_valid.values, label = y_valid)
-
 param = {'objective':'binary:logistic','tree_method':'approx', 'sketch_eps':0.004,
          'eta':.1, 'min_child_weight':100, 'lambda':0, 'eval_metric':'auc',
          'nthread':8, 'seed':123, 'silent':1}
@@ -128,17 +130,6 @@ print(pd.DataFrame(scores))
 
 # r005
 # 2016/10/21 7.5m
-data_train = pd.read_csv('/home/tks/download/higgs/binary.train750', header=None)
-data_valid = pd.read_csv('/home/tks/download/higgs/binary.valid250', header=None)
-
-y_train = data_train[0].values
-data_train.drop(0, axis=1, inplace=True)
-y_valid = data_valid[0].values
-data_valid.drop(0, axis=1, inplace=True)
-
-dtrain = xgb.DMatrix(data_train.values, label = y_train)
-dvalid = xgb.DMatrix(data_valid.values, label = y_valid)
-
 param = {'objective':'binary:logistic','tree_method':'approx', 'sketch_eps':0.00392,
          'eta':.1, 'max_depth':1000, 'lambda':0, 'eval_metric':'auc',
          'nthread':8, 'seed':123, 'silent':1}
@@ -187,19 +178,8 @@ print(df)
 2              4000  116.155873          3541
 
 # r006
-# 'min_child_weight':1000
 # 2016/10/21 3.4h
-data_train = pd.read_csv('/home/tks/download/higgs/binary.train750', header=None)
-data_valid = pd.read_csv('/home/tks/download/higgs/binary.valid250', header=None)
-
-y_train = data_train[0].values
-data_train.drop(0, axis=1, inplace=True)
-y_valid = data_valid[0].values
-data_valid.drop(0, axis=1, inplace=True)
-
-dtrain = xgb.DMatrix(data_train.values, label = y_train)
-dvalid = xgb.DMatrix(data_valid.values, label = y_valid)
-
+# 'min_child_weight':1000
 param = {'objective':'binary:logistic','tree_method':'approx', 'sketch_eps':0.00392,
          'eta':.1, 'min_child_weight':1000, 'max_depth':1000, 'lambda':0,
          'eval_metric':['logloss','auc'],
@@ -215,7 +195,7 @@ bst = xgb.train(param, dtrain, n_rounds, [(dtrain, 'train'), (dvalid, 'valid')],
                 evals_result=evals_result)
 tmp = get_all_leaves(bst)
 n_nodes.append([len(s) for s in tmp])
-scores.append({'min_child_weight':mc, 'total_leaves':np.sum(n_nodes[-1]),
+scores.append({'min_child_weight':param['min_child_weight'], 'total_leaves':np.sum(n_nodes[-1]),
                'time':time.time() - t0})
 print(scores[-1])
 
@@ -227,7 +207,7 @@ df_auc_loss = pd.DataFrame({'auc_train':evals_result['train']['auc'],
                             'leaf_cnt':n_nodes[0]})
 
    min_child_weight          time  total_leaves
-0              4000  12198.695484        476780
+0              1000  12198.695484        476780
 
 df_auc_loss.tail(10)
      auc_train  auc_valid  leaf_cnt  loss_train  loss_valid
@@ -246,5 +226,167 @@ df.to_csv('log/r006.csv')
 df_auc_loss.to_csv('log/r006_auc_loss.csv')
 
 
+# r008
+# 'min_child_weight':1000
+# 'subsample':0.5
+# 2016/10/25 2.64h
+param = {'objective':'binary:logistic','tree_method':'approx', 'sketch_eps':0.00392,
+         'eta':.1, 'min_child_weight':1000, 'max_depth':1000, 'lambda':0,
+         'subsample':0.5,
+         'eval_metric':['logloss','auc'],
+         'nthread':8, 'seed':123, 'silent':1}
+
+n_rounds=500
+
+n_nodes = []
+scores = []
+t0 = time.time()
+evals_result = {}
+bst = xgb.train(param, dtrain, n_rounds, [(dtrain, 'train'), (dvalid, 'valid')],
+                evals_result=evals_result)
+tmp = get_all_leaves(bst)
+n_nodes.append([len(s) for s in tmp])
+scores.append({'min_child_weight':param['min_child_weight'], 'total_leaves':np.sum(n_nodes[-1]),
+               'time':time.time() - t0})
+print(scores[-1])
+
+df = pd.DataFrame(scores)
+df_auc_loss = pd.DataFrame({'auc_train':evals_result['train']['auc'],
+                            'auc_valid':evals_result['valid']['auc'],
+                            'loss_train':evals_result['train']['logloss'],
+                            'loss_valid':evals_result['valid']['logloss'],
+                            'leaf_cnt':n_nodes[0]})
+
+   min_child_weight         time  total_leaves
+0              1000  9504.795172        242552
+
+df_auc_loss.tail(10)
+     auc_train  auc_valid  leaf_cnt  loss_train  loss_valid
+490   0.863225   0.847655       456    0.459379    0.479772
+491   0.863262   0.847664       451    0.459328    0.479758
+492   0.863296   0.847672       464    0.459277    0.479748
+493   0.863335   0.847684       462    0.459224    0.479730
+494   0.863373   0.847694       467    0.459173    0.479718
+495   0.863407   0.847703       454    0.459128    0.479705
+496   0.863440   0.847713       460    0.459078    0.479691
+497   0.863478   0.847722       462    0.459026    0.479678
+498   0.863513   0.847729       457    0.458977    0.479668
+499   0.863564   0.847754       457    0.458909    0.479633
+
+df.to_csv('log/r008.csv')
+df_auc_loss.to_csv('log/r008_auc_loss.csv')
+
 #
+# r007
+# 2016/10/25 
+# 'min_child_weight':1000
+# 'colsample_bylevel':0.5
+
+param = {'objective':'binary:logistic','tree_method':'approx', 'sketch_eps':0.00392,
+         'eta':.1, 'min_child_weight':1000, 'max_depth':4, 'lambda':0,
+         'colsample_bylevel':
+         'eval_metric':['logloss','auc'],
+         'nthread':8, 'seed':123, 'silent':1}
+
+model = XGBClassifier(n_estimators=500, max_depth=1000, seed=123, reg_lambda=0)
+n_rounds=50
+
+n_nodes = []
+scores = []
+t0 = time.time()
+evals_result = {}
+bst = xgb.train(param, dtrain, n_rounds, [(dtrain, 'train'), (dvalid, 'valid')],
+                evals_result=evals_result)
+tmp = get_all_leaves(bst)
+n_nodes.append([len(s) for s in tmp])
+scores.append({'min_child_weight':param['min_child_weight'], 'total_leaves':np.sum(n_nodes[-1]),
+               'time':time.time() - t0})
+print(scores[-1])
+
+df = pd.DataFrame(scores)
+df_auc_loss = pd.DataFrame({'auc_train':evals_result['train']['auc'],
+                            'auc_valid':evals_result['valid']['auc'],
+                            'loss_train':evals_result['train']['logloss'],
+                            'loss_valid':evals_result['valid']['logloss'],
+                            'leaf_cnt':n_nodes[0]})
+
+   min_child_weight          time  total_leaves
+0              1000  12096.300848        476780
+
+df_auc_loss.tail(10)
+     auc_train  auc_valid  leaf_cnt  loss_train  loss_valid
+490   0.881540   0.852546       890    0.433844    0.472947
+491   0.881603   0.852561       907    0.433757    0.472926
+492   0.881663   0.852573       892    0.433671    0.472909
+493   0.881726   0.852588       894    0.433581    0.472889
+494   0.881788   0.852603       905    0.433493    0.472869
+495   0.881846   0.852610       909    0.433415    0.472859
+496   0.881901   0.852613       899    0.433338    0.472854
+497   0.881962   0.852626       903    0.433247    0.472834
+498   0.882019   0.852633       899    0.433165    0.472824
+499   0.882082   0.852651       889    0.433071    0.472797     auc_train  auc_valid  leaf_cnt  loss_train  loss_valid
+490   0.881540   0.852546       890    0.433844    0.472947
+491   0.881603   0.852561       907    0.433757    0.472926
+492   0.881663   0.852573       892    0.433671    0.472909
+493   0.881726   0.852588       894    0.433581    0.472889
+494   0.881788   0.852603       905    0.433493    0.472869
+495   0.881846   0.852610       909    0.433415    0.472859
+496   0.881901   0.852613       899    0.433338    0.472854
+497   0.881962   0.852626       903    0.433247    0.472834
+498   0.882019   0.852633       899    0.433165    0.472824
+499   0.882082   0.852651       889    0.433071    0.472797
+
+df.to_csv('log/r007.csv')
+df_auc_loss.to_csv('log/r007_auc_loss.csv')
+
+
+
+
+## end
+from xgboost.sklearn import XGBClassifier
+
+n = data_train.shape[0]
+n=6000000
+X_tr = data_train.values[:n]
+y_tr = y_train[:n]
+
+X_va = data_valid.values
+y_va = y_valid
+
+model = XGBClassifier(n_estimators=1,
+                      learning_rate=0.1,
+                      max_depth=1000,
+                      min_child_weight=1000,
+                      reg_lambda=0,
+                      seed=12)
+
+
+for cb in [0.1, 1.]:
+    print('\ncolsample_bytree: %.1f' % cb)
+    model.colsample_bylevel = cb
+    model.fit(X_tr, y_tr, eval_set=[(X_tr, y_tr), (X_va, y_va)],
+              eval_metric='auc', verbose=True)
+
+y_train=y_train.astype(int)
+
+n = data_train.shape[0]
+n = 327690
+dtrain = xgb.DMatrix(data_train.values[:n], label = y_train[:n])
+
+param2 = {'objective':'binary:logistic','tree_method':'approx', 'sketch_eps':0.00392,
+         'eta':.1, 'min_child_weight':10, 'max_depth':10, 'lambda':0,
+         'eval_metric':['logloss','auc'],
+         'nthread':2, 'seed':123, 'silent':1}
+
+param2 = {'objective':'binary:logistic',
+         'eta':.1, 'max_depth':10,# 'lambda':0,
+         'eval_metric':['logloss','auc'],
+         'nthread':8, 'seed':123, 'silent':1}
+
+
+for cb in [0.1, 1.]:
+    print('colsample_bylevel:%.1f' % cb)
+    param2.update({'colsample_bylevel':cb})
+    bst2 = xgb.train(param2, dtrain, 2, [(dtrain, 'train')],
+                     evals_result=evals_result)
 
