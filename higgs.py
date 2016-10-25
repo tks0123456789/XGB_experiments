@@ -276,24 +276,21 @@ df_auc_loss.tail(10)
 df.to_csv('log/r008.csv')
 df_auc_loss.to_csv('log/r008_auc_loss.csv')
 
-#
-# r007
-# 2016/10/25 
+# r009
+# 2016/10/26 56m
 # 'min_child_weight':1000
-# 'colsample_bylevel':0.5
+# 'max_depth':10
 
 param = {'objective':'binary:logistic','tree_method':'approx', 'sketch_eps':0.00392,
-         'eta':.1, 'min_child_weight':1000, 'max_depth':4, 'lambda':0,
-         'colsample_bylevel':
+         'eta':.1, 'min_child_weight':1000, 'max_depth':10, 'lambda':0,
          'eval_metric':['logloss','auc'],
          'nthread':8, 'seed':123, 'silent':1}
-
-model = XGBClassifier(n_estimators=500, max_depth=1000, seed=123, reg_lambda=0)
-n_rounds=50
 
 n_nodes = []
 scores = []
 t0 = time.time()
+n_rounds = 500
+
 evals_result = {}
 bst = xgb.train(param, dtrain, n_rounds, [(dtrain, 'train'), (dvalid, 'valid')],
                 evals_result=evals_result)
@@ -310,35 +307,74 @@ df_auc_loss = pd.DataFrame({'auc_train':evals_result['train']['auc'],
                             'loss_valid':evals_result['valid']['logloss'],
                             'leaf_cnt':n_nodes[0]})
 
-   min_child_weight          time  total_leaves
-0              1000  12096.300848        476780
+   min_child_weight         time  total_leaves
+0              1000  3337.426304         97258
 
 df_auc_loss.tail(10)
      auc_train  auc_valid  leaf_cnt  loss_train  loss_valid
-490   0.881540   0.852546       890    0.433844    0.472947
-491   0.881603   0.852561       907    0.433757    0.472926
-492   0.881663   0.852573       892    0.433671    0.472909
-493   0.881726   0.852588       894    0.433581    0.472889
-494   0.881788   0.852603       905    0.433493    0.472869
-495   0.881846   0.852610       909    0.433415    0.472859
-496   0.881901   0.852613       899    0.433338    0.472854
-497   0.881962   0.852626       903    0.433247    0.472834
-498   0.882019   0.852633       899    0.433165    0.472824
-499   0.882082   0.852651       889    0.433071    0.472797     auc_train  auc_valid  leaf_cnt  loss_train  loss_valid
-490   0.881540   0.852546       890    0.433844    0.472947
-491   0.881603   0.852561       907    0.433757    0.472926
-492   0.881663   0.852573       892    0.433671    0.472909
-493   0.881726   0.852588       894    0.433581    0.472889
-494   0.881788   0.852603       905    0.433493    0.472869
-495   0.881846   0.852610       909    0.433415    0.472859
-496   0.881901   0.852613       899    0.433338    0.472854
-497   0.881962   0.852626       903    0.433247    0.472834
-498   0.882019   0.852633       899    0.433165    0.472824
-499   0.882082   0.852651       889    0.433071    0.472797
+490   0.849419   0.841926       127    0.478304    0.487696
+491   0.849476   0.841967       255    0.478227    0.487641
+492   0.849567   0.842037       357    0.478100    0.487547
+493   0.849594   0.842055       179    0.478063    0.487523
+494   0.849610   0.842064       102    0.478043    0.487511
+495   0.849630   0.842075       161    0.478014    0.487494
+496   0.849651   0.842085       150    0.477987    0.487480
+497   0.849663   0.842093        89    0.477969    0.487469
+498   0.849666   0.842095        43    0.477963    0.487465
+499   0.849677   0.842101        95    0.477948    0.487456
 
-df.to_csv('log/r007.csv')
-df_auc_loss.to_csv('log/r007_auc_loss.csv')
+df.to_csv('log/r009.csv')
+df_auc_loss.to_csv('log/r009_auc_loss.csv')
 
+# r010
+# 2016/10/26 25.4m
+# 'min_child_weight':1000
+# 'max_depth':4
+
+param = {'objective':'binary:logistic','tree_method':'approx', 'sketch_eps':0.00392,
+         'eta':.1, 'min_child_weight':1000, 'max_depth':4, 'lambda':0,
+         'eval_metric':['logloss','auc'],
+         'nthread':8, 'seed':123, 'silent':1}
+
+n_nodes = []
+scores = []
+t0 = time.time()
+n_rounds = 500
+
+evals_result = {}
+bst = xgb.train(param, dtrain, n_rounds, [(dtrain, 'train'), (dvalid, 'valid')],
+                evals_result=evals_result)
+tmp = get_all_leaves(bst)
+n_nodes.append([len(s) for s in tmp])
+scores.append({'min_child_weight':param['min_child_weight'], 'total_leaves':np.sum(n_nodes[-1]),
+               'time':time.time() - t0})
+print(scores[-1])
+
+df = pd.DataFrame(scores)
+df_auc_loss = pd.DataFrame({'auc_train':evals_result['train']['auc'],
+                            'auc_valid':evals_result['valid']['auc'],
+                            'loss_train':evals_result['train']['logloss'],
+                            'loss_valid':evals_result['valid']['logloss'],
+                            'leaf_cnt':n_nodes[0]})
+
+   min_child_weight         time  total_leaves
+0              1000  1525.824757          7389
+
+df_auc_loss.tail(10)
+     auc_train  auc_valid  leaf_cnt  loss_train  loss_valid
+490   0.816977   0.815593         8    0.520314    0.521733
+491   0.816989   0.815604        13    0.520295    0.521716
+492   0.817009   0.815624        16    0.520266    0.521688
+493   0.817042   0.815657        16    0.520226    0.521648
+494   0.817045   0.815659        10    0.520222    0.521645
+495   0.817075   0.815687        13    0.520194    0.521619
+496   0.817084   0.815694        10    0.520184    0.521610
+497   0.817096   0.815705        13    0.520166    0.521594
+498   0.817117   0.815723        16    0.520136    0.521568
+499   0.817120   0.815726         9    0.520131    0.521564
+
+df.to_csv('log/r010.csv')
+df_auc_loss.to_csv('log/r010_auc_loss.csv')
 
 
 
