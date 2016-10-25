@@ -1,12 +1,12 @@
 import xgboost as xgb
 from sklearn.datasets import make_classification
 
-X, y = make_classification(n_samples=2**15+1, n_features=10, n_informative=5, n_redundant=5,
+n = 2 ** 15
+X, y = make_classification(n_samples=n+1, n_features=10, n_informative=5, n_redundant=5,
                            shuffle=True, random_state=123)
 
 param = {'objective':'binary:logistic','tree_method':'approx',
          'eval_metric':'logloss','seed':123}
-n = 2 ** 15
 
 print('num_row:%d tree_method:%s' % (n+1, 'approx'))
 dtrain = xgb.DMatrix(X, y)
