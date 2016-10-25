@@ -62,5 +62,5 @@ colsample_bylevel:0.10
 [03:04:47] src/tree/updater_prune.cc:74: tree pruning end, 1 roots, 114 extra nodes, 0 pruned nodes, max_depth=6
 [0]	train-logloss:0.546035
 colsample_bylevel:0.01
-[02:56:02] dmlc-core/include/dmlc/logging.h:235: [02:56:02] src/tree/updater_colmaker.cc:637: Check failed: (n) > (0) colsample_bylevel is too small that no feature can be included
+[03:04:47] dmlc-core/include/dmlc/logging.h:235: [03:04:47] src/tree/updater_colmaker.cc:637: Check failed: (n) > (0) colsample_bylevel is too small that no feature can be included
 """
