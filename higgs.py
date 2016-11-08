@@ -376,8 +376,74 @@ df_auc_loss.tail(10)
 df.to_csv('log/r010.csv')
 df_auc_loss.to_csv('log/r010_auc_loss.csv')
 
+# r011
+# 2016/10/28
+# cpu vs gpu
+# n=4000000 ==>> grow_gpu crash (memory)
+n_rounds = 10
+param = {'objective':'binary:logistic',
+         'max_depth':6,
+         'seed':123, 'silent':1}
+scores = []
+for n in [1000000, 2000000]:
+    dtrain = xgb.DMatrix(data_train.values[:n], label = y_train[:n])
+    for updater in ['grow_colmaker', 'grow_gpu']:
+        param['updater'] = updater
+        for nthread in [1, 4, 8]:
+            param['nthread'] = nthread
+            t0 = time.time()
+            bst = xgb.train(param, dtrain, n_rounds)
+            scores.append({'n':n, 'updater':updater, 'nthread':nthread, 
+                           'time':time.time() - t0})
+            print(scores[-1])
 
+df = pd.DataFrame(scores)
+df.to_csv('log/r011.csv')
 
+pd.set_option('display.precision', 1)
+print(df.set_index(['n', 'updater', 'nthread'])['time'].unstack())
+nthread                    1     4     8
+n       updater                         
+1000000 grow_colmaker  113.4  31.7  24.4
+        grow_gpu        13.4   7.4   5.4
+2000000 grow_colmaker  237.8  67.7  52.1
+        grow_gpu        25.1  11.8  11.3
+
+# r012
+# 2016/10/28 5.6m
+# sketch_eps
+n = 2000000
+dtrain = xgb.DMatrix(data_train.values[:n], label = y_train[:n])
+n_rounds = 10
+param = {'objective':'binary:logistic',
+         'max_depth':6, 'tree_method':'approx',
+         'seed':123, 'silent':1, 'nthread':8}
+scores = []
+for r_sketch_eps in [1024, 512, 256, 128, 64, 32, 16, 8, 4]:
+    param['sketch_eps'] = 1./ r_sketch_eps
+    t0 = time.time()
+    bst = xgb.train(param, dtrain, n_rounds)
+    scores.append({'r_sketch_eps':r_sketch_eps,
+                   'time':time.time() - t0})
+    print(scores[-1])
+
+df = pd.DataFrame(scores)
+df.to_csv('log/r012.csv')
+
+pd.set_option('display.precision', 1)
+print(df.set_index('r_sketch_eps'))
+              time
+r_sketch_eps      
+1024          44.0
+512           39.9
+256           37.7
+128           36.1
+64            35.8
+32            35.5
+16            35.5
+8             35.9
+4             35.6
+        
 ## end
 from xgboost.sklearn import XGBClassifier
 
