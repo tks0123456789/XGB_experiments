@@ -16,8 +16,9 @@ def get_all_leaves(bst):
     return [get_leaf_values(tree) for tree in dmp]
 
 # init begin
-data_train = pd.read_csv('/home/tks/download/higgs/binary.train750', header=None)
-data_valid = pd.read_csv('/home/tks/download/higgs/binary.valid250', header=None)
+data_path =  '/media/tks/E07C0CA17C0C7496/data/higgs/'
+data_train = pd.read_csv(data_path + 'binary.train750', header=None)
+data_valid = pd.read_csv(data_path + 'binary.valid250', header=None)
 
 
 y_train = data_train[0].values
