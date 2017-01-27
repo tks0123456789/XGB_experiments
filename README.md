@@ -2,7 +2,7 @@
 
 name|#instances|#features|Task|#classes
 --- | -------- | ------- | -- | ------ 
-[Covertype Data Set](https://archive.ics.uci.edu/ml/datasets/Covertype)|581012|54|Classification|5
+[Covertype Data Set](https://archive.ics.uci.edu/ml/datasets/Covertype) | 581012 | 54 | Classification | 5
 
 Class|#Instances
 ---- | --------
@@ -17,5 +17,5 @@ Class|#Instances
 
 file name|description|data
 -------- | --------- | -- 
-XGBoost_refresh.ipynb| updater=refresh| Covtype
+XGBoost_refresh.ipynb | updater=refresh | Covtype
 
