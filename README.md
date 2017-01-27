@@ -1,7 +1,7 @@
-### XGBoose experiments
+### XGBoost experiments
 
-name|#instances|#features|Task|#classes
---- | -------- | ------- | -- | ------ 
+name| #instances | #features | Task | #classes
+--- | ---------- | --------- | ---- | --------
 [Covertype Data Set](https://archive.ics.uci.edu/ml/datasets/Covertype) | 581012 | 54 | Classification | 5
 
 Class|#Instances
@@ -15,7 +15,7 @@ Class|#Instances
     7|  20510
 
 
-file name|description|data
--------- | --------- | -- 
+file name | description | data
+--------- | ----------- | ----
 XGBoost_refresh.ipynb | updater=refresh | Covtype
 
