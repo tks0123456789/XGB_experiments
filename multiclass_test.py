@@ -7,10 +7,6 @@ import numpy as np
 import scipy as sp
 import pandas as pd
 import xgboost as xgb
-
-import json
-import lightgbm as lgb
-
 import re
 from sklearn.datasets import make_classification
 from sklearn.cross_validation import StratifiedShuffleSplit
@@ -217,53 +213,3 @@ f47     41
 f29     26
 f93     17
 f34     10
-
-# r016
-# LightGBM
-# 2016/12/9
-lgb_train = lgb.Dataset(X_train, y_train)
-lgb_eval = lgb.Dataset(X_test, y_test, reference=lgb_train)
-
-# specify your configurations as a dict
-params = {
-    'task' : 'train',
-    'boosting_type' : 'gbdt',
-    'objective' : 'regression',
-    'metric' : {'l2', 'auc'},
-    'num_leaves' : 31,
-    'learning_rate' : 0.05,
-    'feature_fraction' : 0.9,
-    'bagging_fraction' : 0.8,
-    'bagging_freq': 5,
-    'verbose' : 0
-}
-
-print('Start training...')
-# train
-gbm = lgb.train(params,
-                lgb_train,
-                num_boost_round=20,
-                valid_sets=lgb_eval,
-                early_stopping_rounds=5)
-
-print('Save model...')
-# save model to file
-gbm.save_model('model.txt')
-
-print('Start predicting...')
-# predict
-y_pred = gbm.predict(X_test, num_iteration=gbm.best_iteration)
-# eval
-print('The rmse of prediction is:', mean_squared_error(y_test, y_pred) ** 0.5)
-
-print('Dump model to JSON...')
-# dump model to json (and save to file)
-model_json = gbm.dump_model()
-
-with open('model.json', 'w+') as f:
-    json.dump(model_json, f, indent=4)
-
-print('Calculate feature importances...')
-# feature importances
-print('Feature importances:', list(gbm.feature_importance()))
-# print('Feature importances:', list(gbm.feature_importance("gain")))
