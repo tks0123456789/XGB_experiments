@@ -1,5 +1,8 @@
 import numpy as np
+import pandas as pd
+import time
 import re
+import xgboost as xgb
 from xgboost.callback import _get_callback_context
 
 def leaf_cnts(bst):
@@ -108,11 +111,11 @@ def experiment_xgb(X_train, y_train, X_valid, y_valid,
     print(df_leaf_cnts.iloc[::n_skip,])
     
     print('\nw L1 sum')
-    df_w_L1 = pd.DataFrame(w_L1, columns=columns)
+    df_w_L1 = pd.DataFrame(w_L1_dict, columns=columns)
     print(df_w_L1.iloc[::n_skip,])
 
     print('\nw L2 sum')
-    df_w_L2 = pd.DataFrame(w_L1, columns=columns)
+    df_w_L2 = pd.DataFrame(w_L2_dict, columns=columns)
     print(df_w_L2.iloc[::n_skip,])
     
     df_feat_imps = pd.DataFrame(feat_imps_dict,
@@ -129,4 +132,8 @@ def experiment_xgb(X_train, y_train, X_valid, y_valid,
         df_w_L1.to_csv('log/' + fname_header + 'w_L1__' + fname_footer)
         df_w_L2.to_csv('log/' + fname_header + 'w_L2__' + fname_footer)
         df_feat_imps.to_csv('log/' + fname_header + 'Feat_imps_' + fname_footer)
-    return(time_sec_lst, df_score_valid.tail(1).values[0].tolist())
+    return{'time'     : time_sec_lst,
+           'score'    : df_score_valid.tail(1).values[0].tolist(),
+           'leaf_cnts': df_leaf_cnts.sum(0),
+           'w_L1'     : df_w_L1.sum(0),
+           'w_L2'     : df_w_L2.sum(0)}
