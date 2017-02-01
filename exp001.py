@@ -124,11 +124,6 @@ params_xgb_lst = [params_xgb_cpu, params_xgb_gpu, params_xgb_hist_1, params_xgb_
 model_str_lst = ['CPU', 'GPU', 'hist_256', 'hist_1024']
 
 params = []
-times = []
-valid_scores = []
-total_leaf_cnts = []
-total_w_L1 = []
-total_w_L2 = []
             
 stat_name_lst = ['time', 'leaf_cnts', 'w_L1', 'w_L2', 'score']
 stats_dict = {name:[] for name in stat_name_lst}
