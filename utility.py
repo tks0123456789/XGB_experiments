@@ -58,3 +58,75 @@ def reset_parameters(param_name, param_values):
 
     callback.before_iteration = True
     return callback
+
+
+def experiment_xgb(X_train, y_train, X_valid, y_valid,
+                   params_xgb_lst, model_str_lst,
+                   n_rounds=10,
+                   fname_header=None, fname_footer=None, n_skip=10):
+    t000 = time.time()
+    
+    df_score_train = pd.DataFrame(index=range(n_rounds))
+    df_score_valid = pd.DataFrame(index=range(n_rounds))
+    feature_names = ['f%d' % i for i in range(X_train.shape[1])]
+    feat_imps_dict = {}
+    leaf_cnts_dict = {}
+    w_L1_dict = {}
+    w_L2_dict = {}
+    time_sec_lst = []
+
+    # XGBoost
+    metric = params_xgb_lst[0]['eval_metric']
+    xgmat_train = xgb.DMatrix(X_train, label=y_train)
+    xgmat_valid = xgb.DMatrix(X_valid, label=y_valid)
+    watchlist = [(xgmat_train,'train'), (xgmat_valid, 'valid')]
+    print("training XGBoost")
+    for params_xgb,  model_str in zip(params_xgb_lst, model_str_lst):
+        evals_result = {}
+        t0 = time.time()
+        bst = xgb.train(params_xgb, xgmat_train, n_rounds, watchlist,
+                        evals_result=evals_result, verbose_eval=False)
+        time_sec_lst.append(time.time() - t0)
+        print("%s: %s seconds" % (model_str, str(time_sec_lst[-1])))
+        df_score_train[model_str] = evals_result['train'][metric]
+        df_score_valid[model_str] = evals_result['valid'][metric]
+        feat_imps_dict[model_str] = pd.Series(bst.get_score(importance_type='gain'), index=feature_names)
+        leaves_lst = get_all_leaves(bst)
+        leaf_cnts_dict[model_str] = [len(leaves) for leaves in leaves_lst]
+        w_L1_dict[model_str] = [np.sum(np.abs(leaves)) for leaves in leaves_lst]
+        w_L2_dict[model_str] = [np.sqrt(np.sum(leaves ** 2)) for leaves in leaves_lst]
+
+    print('\n%s train' % metric)
+    print(df_score_train.iloc[::n_skip,])
+    print('\n%s valid' % metric)
+    print(df_score_valid.iloc[::n_skip,])
+
+    columns = model_str_lst
+    
+    print('\nLeaf counts')
+    df_leaf_cnts = pd.DataFrame(leaf_cnts_dict, columns=columns)
+    print(df_leaf_cnts.iloc[::n_skip,])
+    
+    print('\nw L1 sum')
+    df_w_L1 = pd.DataFrame(w_L1, columns=columns)
+    print(df_w_L1.iloc[::n_skip,])
+
+    print('\nw L2 sum')
+    df_w_L2 = pd.DataFrame(w_L1, columns=columns)
+    print(df_w_L2.iloc[::n_skip,])
+    
+    df_feat_imps = pd.DataFrame(feat_imps_dict,
+                                index=feature_names,
+                                columns=columns).fillna(0)
+    df_feat_imps /= df_feat_imps.sum(0)
+    df_feat_imps = df_feat_imps.sort_values(model_str_lst[0], ascending=False)
+    print('\nFeature importance(gain) sorted by ' + model_str_lst[0])
+    print(df_feat_imps.head(5))
+    if fname_header is not None:
+        df_score_train.to_csv('log/' + fname_header + 'Score_Train_' + fname_footer)
+        df_score_valid.to_csv('log/' + fname_header + 'Score_Valid_' + fname_footer)
+        df_leaf_cnts.to_csv('log/' + fname_header + 'Leaf_cnts_' + fname_footer)
+        df_w_L1.to_csv('log/' + fname_header + 'w_L1__' + fname_footer)
+        df_w_L2.to_csv('log/' + fname_header + 'w_L2__' + fname_footer)
+        df_feat_imps.to_csv('log/' + fname_header + 'Feat_imps_' + fname_footer)
+    return(time_sec_lst, df_score_valid.tail(1).values[0].tolist())
