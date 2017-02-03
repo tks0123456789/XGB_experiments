@@ -21,11 +21,10 @@ def get_all_leaves(bst):
 
 def reset_parameters(param_name, param_values):
     """Reset paramter values after iteration 1
-    NOTE: the initial learning rate will still take in-effect on first iteration.
     Parameters
     ----------
     param_values: list or function
-        List of learning rate for each boosting round
+        List of parameter values for each boosting round
         or a customized function that calculates eta in terms of
         current number of round and the total number of boosting round (e.g. yields
         learning rate decay)
@@ -38,13 +37,13 @@ def reset_parameters(param_name, param_values):
     """
     def get_param_value(i, n, param_values):
         """helper providing the learning rate"""
-        if isinstance(param_values, list):
+        if isinstance(param_values, (list, np.ndarray)):
             if len(param_values) != n:
                 raise ValueError("Length of list 'param_values' has to equal 'num_boost_round'.")
-            new_learning_rate = param_values[i]
+            new_param_value = param_values[i]
         else:
-            new_learning_rate = param_values(i, n)
-        return new_learning_rate
+            new_param_value = param_values(i, n)
+        return new_param_value
 
     def callback(env):
         """internal function"""
@@ -137,3 +136,38 @@ def experiment_xgb(X_train, y_train, X_valid, y_valid,
            'leaf_cnts': df_leaf_cnts.sum(0),
            'w_L1'     : df_w_L1.sum(0),
            'w_L2'     : df_w_L2.sum(0)}
+
+def experiment(X_train, y_train, X_valid, y_valid,
+               n_rounds, params_xgb,
+               param_name=None, params_values=None):
+    if param_name is None:
+        callbacks = None
+    else:
+        callbacks = [reset_parameters(param_name, param_values)]
+    xgmat_train = xgb.DMatrix(X_train, label=y_train)
+    xgmat_valid = xgb.DMatrix(X_valid, label=y_valid)
+    watchlist = [(xgmat_valid, 'valid')]
+    evals_result = {}
+    t0 = time.time()
+    bst = xgb.train(params_xgb, xgmat_train, n_rounds, watchlist,
+                    callbacks=callbacks,
+                    early_stopping_rounds=30,
+                    evals_result=evals_result, verbose_eval=False)
+
+    ntree = len(evals_result['valid']['logloss'])
+    df_scores = pd.DataFrame({'valid_loss':evals_result['valid']['logloss']},
+                             index=pd.Index(range(1, ntree+1), name='Boosting iteration'))
+
+    leaves_lst = get_all_leaves(bst)[:ntree]
+    df_leaf_cnts = pd.DataFrame({'leaf_cnts':[len(leaves) for leaves in leaves_lst]},
+                                index=pd.Index(range(1, ntree+1), name='Boosting iteration'))
+    df_w_L2 = pd.DataFrame({'w_L2':[np.sqrt(np.sum(leaves**2)) for leaves in leaves_lst]},
+                           index=pd.Index(range(1, ntree+1), name='Boosting iteration'))
+    print("valid_loss:%.4f, ntree:%d, %.1fs" % \
+          (evals_result['valid']['logloss'][bst.best_iteration],
+           bst.best_ntree_limit,
+           (time.time() - t0)))
+    fig, ax = plt.subplots(3, sharex=True, figsize=(13,9))
+    df_scores.plot(ax=ax[0])
+    df_leaf_cnts.plot(ax=ax[1])
+    df_w_L2.plot(ax=ax[2])
